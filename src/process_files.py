@@ -1,7 +1,9 @@
 """"tools for processing the xml files into a json format for use in the database"""
 import glob
+import os
 import re
 import toml
+import json
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from bs4 import BeautifulSoup
 from langchain.schema.document import Document
@@ -43,6 +45,21 @@ def clean_page_content(unclean_content):
   return cleaned
 
 
+def checkpoint(file_index, page_index, file_finished, page_finished):
+  checkpoint = dict(file_index=file_index, page_index=page_index, file_finished=file_finished, page_finished=page_finished)
+  with open('.checkpoint.json', 'w') as f:
+    json.dump(checkpoint, f)
+
+
+def split_and_insert(doc_collection, vectorstore, text_splitter=None):
+  if text_splitter:
+    texts = text_splitter.split_documents(doc_collection)
+  else:
+    texts = doc_collection
+
+  vectorstore.add_documents(documents=texts)
+
+
 def process_into_database(source, vectorstore=None, output_dir=OUTPUT_DIR):
   raw_40k_fandom_json = glob.glob(f"{output_dir}/{source}_raw/*.xml", recursive=True)
 
@@ -51,16 +68,31 @@ def process_into_database(source, vectorstore=None, output_dir=OUTPUT_DIR):
   json_collection = []
   # for each xml file
 
-  for json_file in tqdm(raw_40k_fandom_json,desc="Processing Files", position=0):
+  if os.path.exists('.checkpoint.json'):
+    with open('.checkpoint.json', 'r') as f:
+      checkpoint = json.load(f)
+    
+    checkpoint_file_finished = checkpoint['file_finished']
+    checkpoint_file_index = checkpoint['file_index'] + checkpoint_file_finished # we want the file after the checkpoint
+    checkpoint_page_finished = checkpoint['page_finished']
+    checkpoint_page_index = checkpoint['page_index'] + checkpoint_page_finished # we want the file after the checkpoint
+  else:
+    checkpoint_file_index = 0
+    checkpoint_page_index = 0
+
+  for file_index, json_file in enumerate(tqdm(raw_40k_fandom_json[checkpoint_file_index:],desc="Processing Files", position=0)):
     print(json_file)
+
     # get a list of the pages
     with open(json_file, "r",encoding='utf-8') as xmlfile:
       soup = BeautifulSoup(xmlfile,features="lxml-xml")
-      pages = soup.find_all("page")
+    
+    pages = soup.find_all("page")
 
     # for each page:
     doc_collection = []
-    for page in tqdm(pages, desc="Processing pages", position=1, leave=False):
+    for page_index, page in enumerate(tqdm(pages[checkpoint_page_index:], desc="Processing pages", position=1, leave=False)):
+      
       page_elements = extract_page_elements(page,source)
 
       page_elements['metadata']['categories'] = str(page_elements['metadata']['categories'])
@@ -68,20 +100,22 @@ def process_into_database(source, vectorstore=None, output_dir=OUTPUT_DIR):
 
       if page_elements['page_content'][0:9] == '#REDIRECT':
         continue # we want to ignore the "redirect" pages as they have no useful content
-
+      
       json_collection.append(page_elements)
       doc_collection.append(Document(**page_elements))
 
-    # during for each loop, we then batch insert all the pages for that file into the database
-    if vectorstore:
-      if text_splitter:
-        texts = text_splitter.split_documents(doc_collection)
-      else:
-        texts = doc_collection
+      # every hundred pages we insert into the database and make a checkpoint
+      if (page_index % 100) or (page_index == len(pages)-1): 
+        if vectorstore:
+          split_and_insert(doc_collection, vectorstore, text_splitter)
+        doc_collection=[]
+        # checkpoint that we have finished this particular page
+        checkpoint(file_index, page_index, file_finished=False, page_finished=True)
 
-      vectorstore.add_documents(documents=texts)
+    # checkpoint that we have finished the entire file
+    checkpoint(file_index, page_index, file_finished=True, page_finished=True)
 
-  return json_collection
+  #return json_collection
 
 if __name__=="__main__":
   vectordb = vectordb.create_vectorstore()

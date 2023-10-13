@@ -1,0 +1,7 @@
+{
+    "__comment__": "This is an example of a checkpoint used to restart the data loading if something causes it to stop.",
+    "file_finished":false, 
+    "file_index":0,
+    "page_finished":false,
+    "page_index":0
+}
