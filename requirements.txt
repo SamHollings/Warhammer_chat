@@ -1,11 +1,11 @@
 langchain
 tdqm
-chromadb 
-openai 
+chromadb
 anthropic 
 langchain 
 numpy==1.23 
 python-dotenv 
 sentence-transformers
 beautifulsoup4
+streamlit
 scrapefandom@git+https://github.com/SamHollings/ScrapeFandom.git
