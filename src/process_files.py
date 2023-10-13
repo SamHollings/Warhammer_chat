@@ -5,8 +5,8 @@ import toml
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from bs4 import BeautifulSoup
 from langchain.schema.document import Document
-from tdqm import tqdm
-import src.vectordb as vectordb
+from tqdm import tqdm
+import vectordb as vectordb
 
 
 config = toml.load('config.toml')

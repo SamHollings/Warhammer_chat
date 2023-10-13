@@ -1,4 +1,5 @@
 # Desc: a simple streamlit langchain chat interface, that uses the vectordb to retrieve documents
+# Maybe build something like this: https://docs.streamlit.io/knowledge-base/tutorials/build-conversational-apps#build-a-chatgpt-like-app
 
 import streamlit as st
 import src.llm as llm

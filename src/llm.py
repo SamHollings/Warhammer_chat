@@ -1,6 +1,5 @@
 import os
 from langchain.prompts import PromptTemplate
-from langchain.chat_models import ChatOpenAI
 from langchain.vectorstores import Chroma
 from langchain.chains import RetrievalQA
 from langchain.chat_models import ChatAnthropic
