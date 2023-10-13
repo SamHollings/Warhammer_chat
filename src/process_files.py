@@ -52,8 +52,9 @@ def process_into_database(source, vectorstore=None, output_dir=OUTPUT_DIR):
   # for each xml file
 
   for json_file in tqdm(raw_40k_fandom_json,desc="Processing Files", position=0):
+    print(json_file)
     # get a list of the pages
-    with open(json_file, "r") as xmlfile:
+    with open(json_file, "r",encoding='utf-8') as xmlfile:
       soup = BeautifulSoup(xmlfile,features="lxml-xml")
       pages = soup.find_all("page")
 
