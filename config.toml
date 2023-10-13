@@ -5,3 +5,7 @@ source_wikis=[
     'wh40k.lexicanum.com'
     ]
 output_dir='outputs'
+
+[vectordb]
+persist_directory = 'outputs/40k_vectordb'
+embedding_model =  "sentence-transformers/all-mpnet-base-v2"

@@ -1,1 +1,11 @@
+langchain
+tdqm
+chromadb 
+openai 
+anthropic 
+langchain 
+numpy==1.23 
+python-dotenv 
+sentence-transformers
+beautifulsoup4
 scrapefandom@git+https://github.com/SamHollings/ScrapeFandom.git
