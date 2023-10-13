@@ -1,0 +1,7 @@
+[scrape]
+run_scraper=false
+source_wikis=[
+    'warhammer40k.fandom.com',
+    'wh40k.lexicanum.com'
+    ]
+output_dir='outputs'

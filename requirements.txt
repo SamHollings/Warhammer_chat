@@ -1,0 +1,1 @@
+scrapefandom@git+https://github.com/SamHollings/ScrapeFandom.git
