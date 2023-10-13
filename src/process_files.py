@@ -51,6 +51,20 @@ def checkpoint(file_index, page_index, file_finished, page_finished):
     json.dump(checkpoint, f)
 
 
+def load_existing_checkpoint():
+  if os.path.exists('.checkpoint.json'):
+    with open('.checkpoint.json', 'r') as f:
+      checkpoint = json.load(f)
+    checkpoint_file_finished = checkpoint['file_finished']
+    checkpoint_file_index = checkpoint['file_index'] + checkpoint_file_finished # we want the file after the checkpoint
+    checkpoint_page_finished = checkpoint['page_finished']
+    checkpoint_page_index = checkpoint['page_index'] + checkpoint_page_finished # we want the file after the checkpoint
+  else:
+    checkpoint_file_index = 0
+    checkpoint_page_index = 0
+  return checkpoint_file_index, checkpoint_page_index
+
+
 def split_and_insert(doc_collection, vectorstore, text_splitter=None):
   if text_splitter:
     texts = text_splitter.split_documents(doc_collection)
@@ -62,24 +76,11 @@ def split_and_insert(doc_collection, vectorstore, text_splitter=None):
 
 def process_into_database(source, vectorstore=None, output_dir=OUTPUT_DIR):
   raw_40k_fandom_json = glob.glob(f"{output_dir}/{source}_raw/*.xml", recursive=True)
-
   text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000)
-
   json_collection = []
+  checkpoint_file_index, checkpoint_page_index = load_existing_checkpoint()
+  
   # for each xml file
-
-  if os.path.exists('.checkpoint.json'):
-    with open('.checkpoint.json', 'r') as f:
-      checkpoint = json.load(f)
-    
-    checkpoint_file_finished = checkpoint['file_finished']
-    checkpoint_file_index = checkpoint['file_index'] + checkpoint_file_finished # we want the file after the checkpoint
-    checkpoint_page_finished = checkpoint['page_finished']
-    checkpoint_page_index = checkpoint['page_index'] + checkpoint_page_finished # we want the file after the checkpoint
-  else:
-    checkpoint_file_index = 0
-    checkpoint_page_index = 0
-
   for file_index, json_file in enumerate(tqdm(raw_40k_fandom_json[checkpoint_file_index:],desc="Processing Files", position=0)):
     print(json_file)
 
@@ -92,7 +93,7 @@ def process_into_database(source, vectorstore=None, output_dir=OUTPUT_DIR):
     # for each page:
     doc_collection = []
     for page_index, page in enumerate(tqdm(pages[checkpoint_page_index:], desc="Processing pages", position=1, leave=False)):
-      
+
       page_elements = extract_page_elements(page,source)
 
       page_elements['metadata']['categories'] = str(page_elements['metadata']['categories'])
